@@ -1,0 +1,11 @@
+readme.txt
+secrets.sh
+.vscode
+*.csv
+*.numbers
+bin/
+obj/
+**/bin/
+**/obj/
+Db/
+**/Db/
