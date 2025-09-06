@@ -25,9 +25,9 @@ public class AccountsController : ControllerBase
     }
 
     [HttpGet("names/{accountName}")]
-    public async Task<ActionResult<AccountDTO>> GetAccountDetails(string accountName)
+    public async Task<ActionResult<AccountDTO>> GetAccountDetails(string accountName, DateOnly? date)
     {
-        Account? account = await _accountService.GetAccountAsync(accountName);
+        Account? account = await _accountService.GetAccountByDateAsync(accountName, date);
         if (account is null)
             return NotFound($"Account '{accountName}' not found.");
 

@@ -12,7 +12,7 @@ public class TransactionService : ITransactionService
     }
     public async Task ExecuteOrder(Order order)
     {
-        Account? account = await _accountService.GetAccountAsync(order.Account);
+        Account? account = await _accountService.GetAccountByDateAsync(order.Account, order.CreatedAt);
         if (account is null)
             throw new NullReferenceException($"Account not found: {order.Account}");
 

@@ -32,7 +32,7 @@ public class PortfolioService : IPortfolioService
         return await _accountService.GetTotalMarketValueWherePredicateAsync(predicate, date);
     }
 
-    public async Task<Dictionary<TKey, double>> GroupBy_InMemory<TKey>(Func<AccountSummary, TKey> keySelector, DateOnly? asOf = null) where TKey : notnull
+    private async Task<Dictionary<TKey, double>> GroupBy_InMemory<TKey>(Func<AccountSummary, TKey> keySelector, DateOnly? asOf = null) where TKey : notnull
     {
         var date = asOf ?? DateOnly.FromDateTime(DateTime.Today);
         var accounts = await _accountService.GetAccountSummariesAsync(date);

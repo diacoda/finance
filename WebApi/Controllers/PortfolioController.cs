@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization.Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 using System.Linq.Expressions;
 
@@ -11,10 +12,12 @@ namespace Finance.Tracking.Controllers
     public class PortfolioController : ControllerBase
     {
         private readonly IPortfolioService _portfolioService;
+        private readonly IAccountService _accountService;
 
-        public PortfolioController(IPortfolioService portfolioService)
+        public PortfolioController(IPortfolioService portfolioService, IAccountService accountService)
         {
             _portfolioService = portfolioService;
+            _accountService = accountService;
         }
 
         /// <summary>
@@ -71,6 +74,26 @@ namespace Finance.Tracking.Controllers
 
             return Ok(result);
         }
+
+        [HttpGet("by-owner-type-accountname")]
+        public async Task<ActionResult> GetTotalByOwnerAndTypeWIthAccountNames([FromQuery] DateOnly? asOf = null)
+        {
+            var totals = await _accountService.GetTotalMarketValueGroupedByWithNamesAsync(
+                a => new OwnerTypeKey(a.Owner, a.Type),
+                asOf
+            );
+
+            var result = totals.Select(kvp => new OwnerTypeAccountNameDTO
+            {
+                Owner = kvp.Key.Owner,
+                Type = kvp.Key.Type.ToString(),
+                Total = kvp.Value.Total,
+                AccountNames = kvp.Value.AccountNames
+            }).ToList();
+
+            return Ok(result);
+        }
+
         /// <summary>
         /// GET: api/portfolio/mv/byowner-filter
         /// </summary>

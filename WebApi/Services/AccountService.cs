@@ -117,9 +117,10 @@ public class AccountService : IAccountService
     }
 
     // Get an account by its name
-    public async Task<Account?> GetAccountAsync(string accountName)
+    public async Task<Account?> GetAccountByDateAsync(string accountName, DateOnly? date)
     {
-        DateOnly? date = await GetLatestDateAvailableAsync();
+        if (date is null)
+            date = await GetLatestDateAvailableAsync();
         if (date is null)
             return null;
         // Use FirstOrDefaultAsync to handle case where account doesn't exist
@@ -133,6 +134,8 @@ public class AccountService : IAccountService
         var summary = await _dbContext.AccountSummaries
             .Where(s => s.Name == accountName && s.Date == date)
             .FirstOrDefaultAsync();
+        if (summary == null)
+            return null;
 
         account.MarketValue = summary?.MarketValue ?? 0.0;
         return account;
@@ -283,6 +286,31 @@ public class AccountService : IAccountService
             .Where(predicate)
             .AsNoTracking()
             .SumAsync(a => a.MarketValue);
+
+    public async Task<Dictionary<TKey, MarketValueGroup>> GetTotalMarketValueGroupedByWithNamesAsync<TKey>(
+        Expression<Func<AccountSummary, TKey>> keySelector,
+        DateOnly? asOf = null)
+        where TKey : notnull
+    {
+        var date = asOf ?? DateOnly.FromDateTime(DateTime.Today);
+
+        // Load the rows for the given date into memory
+        var summaries = await _dbContext.AccountSummaries
+            .Where(a => a.Date == date)
+            .ToListAsync();
+
+        // Group and compute totals + account names
+        return summaries
+            .GroupBy(keySelector.Compile()) // compile expression to delegate
+            .ToDictionary(
+                g => g.Key,
+                g => new MarketValueGroup
+                {
+                    Total = g.Sum(a => a.MarketValue),
+                    AccountNames = g.Select(a => a.Name).Distinct().ToList()
+                }
+            );
+    }
 
     public async Task<Dictionary<TKey, double>> GetTotalMarketValueGroupedByAsync<TKey>(Expression<Func<AccountSummary, TKey>> keySelector, DateOnly? asOf = null) where TKey : notnull
     {

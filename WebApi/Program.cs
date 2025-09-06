@@ -129,6 +129,8 @@ using (var scope = app.Services.CreateScope())
     await accountService.InitializeAsync();
 }
 
+
+
 // Middleware
 app.UseStaticFiles();
 if (app.Environment.IsDevelopment())
