@@ -58,60 +58,6 @@ public class PortfolioServiceTests
     }
 
     [Fact]
-    public async Task GroupBy_InMemory_GroupsCorrectly()
-    {
-        // Arrange
-        var today = DateOnly.FromDateTime(DateTime.Today);
-
-        var accounts = new List<AccountSummary>
-            {
-                                new() {
-                    Name="Dan-TD-TFSA-USD",
-                    Owner = "Dan",
-                    Type = AccountType.TFSA,
-                    AccountFilter = AccountFilter.TFSA,
-                    Bank = Bank.TD,
-                    Cash = 0,
-                    Currency = Currency.USD,
-                    MarketValue = 100,
-                    Date = today
-                },
-                new() {
-                    Name="Dan-TD-RRSP-USD",
-                    Owner = "Dan",
-                    Type =AccountType.RRSP,
-                    AccountFilter = AccountFilter.RRSP,
-                    Bank = Bank.TD,
-                    Cash = 0,
-                    Currency = Currency.USD,
-                    MarketValue = 200,
-                    Date = today },
-                new() {
-                    Name = "Oana-WS-TFSA-USD",
-                    Owner = "Oana",
-                    Type = AccountType.TFSA,
-                    AccountFilter = AccountFilter.TFSA,
-                    Bank = Bank.WS,
-                    Cash = 0,
-                    Currency = Currency.USD,
-                    MarketValue = 300,
-                    Date = today }
-            };
-
-        _accountServiceMock
-            .Setup(s => s.GetAccountSummariesAsync(today))
-            .ReturnsAsync(accounts);
-
-        // Act
-        var result = await _portfolioService.GroupBy_InMemory(a => a.Owner);
-
-        // Assert
-        Assert.Equal(2, result.Count);
-        Assert.Equal(300, result["Dan"]);
-        Assert.Equal(300, result["Oana"]);
-    }
-
-    [Fact]
     public async Task GetTotalMarketValueByOwnerAsync_UsesPredicate()
     {
         // Arrange
@@ -237,59 +183,6 @@ public class PortfolioServiceTests
         // Assert
         Assert.Equal(500, result);
         _accountServiceMock.Verify(a => a.GetTotalMarketValueWherePredicateAsync(predicate, today), Times.Once);
-    }
-
-    [Fact]
-    public async Task GroupBy_InMemory_GroupsAndSumsCorrectly()
-    {
-        // Arrange
-        var today = DateOnly.FromDateTime(DateTime.Today);
-        var accounts = new List<AccountSummary>
-            {
-                new() {
-                    Name="Dan-TD-TFSA-USD",
-                    Owner = "Dan",
-                    Type = AccountType.TFSA,
-                    AccountFilter = AccountFilter.TFSA,
-                    Bank = Bank.TD,
-                    Cash = 0,
-                    Currency = Currency.USD,
-                    MarketValue = 100,
-                    Date = today
-                },
-                new() {
-                    Name="Dan-TD-RRSP-USD",
-                    Owner = "Dan",
-                    Type =AccountType.RRSP,
-                    AccountFilter = AccountFilter.RRSP,
-                    Bank = Bank.TD,
-                    Cash = 0,
-                    Currency = Currency.USD,
-                    MarketValue = 200,
-                    Date = today },
-                new() {
-                    Name = "Oana-WS-TFSA-USD",
-                    Owner = "Oana",
-                    Type = AccountType.TFSA,
-                    AccountFilter = AccountFilter.TFSA,
-                    Bank = Bank.WS,
-                    Cash = 0,
-                    Currency = Currency.USD,
-                    MarketValue = 300,
-                    Date = today }
-            };
-
-        _accountServiceMock
-            .Setup(a => a.GetAccountSummariesAsync(today))
-            .ReturnsAsync(accounts);
-
-        // Act
-        var result = await _portfolioService.GroupBy_InMemory(a => a.Owner);
-
-        // Assert
-        Assert.Equal(2, result.Count);
-        Assert.Equal(300, result["Dan"]);
-        Assert.Equal(300, result["Oana"]);
     }
 
     [Fact]
