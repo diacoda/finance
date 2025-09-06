@@ -4,6 +4,10 @@ namespace Finance.Tracking.Services;
 
 public interface IAccountService
 {
+    public Task InitializeAsync();
+    public List<string> GetAccountNames();
+    public Task<Account?> GetAccountAsync(string accountName);
+    public Task UpdateAccountAsync(Account account);
     Task BuildSummariesByDateAsync(DateOnly? asOf = null);
     Task<List<DateOnly>> GetLast30AvailableDatesAsync();
     Task<List<AccountSummary>> GetAccountSummariesAsync(DateOnly asOf);

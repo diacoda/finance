@@ -61,6 +61,7 @@ builder.Services.AddScoped<IPricingService, PricingService>();
 builder.Services.AddScoped<IHistoryService, HistoryService>();
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IPortfolioService, PortfolioService>();
+builder.Services.AddScoped<ITransactionService, TransactionService>();
 
 // Controllers + Swagger
 builder.Services.AddControllers()
@@ -107,7 +108,7 @@ builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.WithOrigins("http://localhost:5173") // React dev server
+        policy.WithOrigins("http://localhost:5173", "https://localhost:5001") // React dev server
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
@@ -124,6 +125,8 @@ using (var scope = app.Services.CreateScope())
         var pricingService = scope.ServiceProvider.GetRequiredService<IPricingService>();
         await pricingService.SavePricesAsync(prices);
     }
+    var accountService = scope.ServiceProvider.GetRequiredService<IAccountService>();
+    await accountService.InitializeAsync();
 }
 
 // Middleware

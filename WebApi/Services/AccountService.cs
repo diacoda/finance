@@ -6,10 +6,10 @@ namespace Finance.Tracking.Services;
 
 public class AccountService : IAccountService
 {
-    private readonly Dictionary<string, Account> _accounts;
-    private readonly IPricingService _pricingService;
-    private readonly IHistoryService _historyService;
-    private readonly FinanceDbContext _dbContext;
+    private Dictionary<string, Account> _accounts;
+    private IPricingService _pricingService;
+    private IHistoryService _historyService;
+    private FinanceDbContext _dbContext;
 
     public AccountService(
         IOptions<AccountOptions> options,
@@ -50,12 +50,33 @@ public class AccountService : IAccountService
             {
                 var normalized = symbolKey.ToString().Replace('.', '_');
                 if (Enum.TryParse<Symbol>(normalized, true, out var symbol))
-                    account.Holdings[symbol] = holding;
+                    account.Holdings.Add(new Holding() { Symbol = symbol, Quantity = holding.Quantity });
             }
-
             _accounts[accountName] = account;
         }
     }
+
+    public async Task InitializeAsync()
+    {
+        // Get all account names that already exist in the database
+        var existingAccountNames = await _dbContext.Accounts
+                                                   .Where(a => _accounts.Keys.Contains(a.Name))
+                                                   .Select(a => a.Name)
+                                                   .ToListAsync();
+
+        // Filter only accounts that are missing
+        var accountsToCreate = _accounts
+            .Where(kvp => !existingAccountNames.Contains(kvp.Key))
+            .Select(kvp => kvp.Value);
+
+        // Add missing accounts along with their holdings
+        if (accountsToCreate.Any())
+        {
+            await _dbContext.Accounts.AddRangeAsync(accountsToCreate);
+            await _dbContext.SaveChangesAsync();
+        }
+    }
+
 
     private AccountSummary BuildAccountSummary(Account account, IReadOnlyDictionary<Symbol, double> prices, DateOnly date)
     {
@@ -79,9 +100,105 @@ public class AccountService : IAccountService
     {
         double marketValue = account.Cash;
         foreach (var holding in account.Holdings)
-            if (prices.TryGetValue(holding.Key, out var price))
-                marketValue += holding.Value.Quantity * price;
+            if (prices.TryGetValue(holding.Symbol, out var price))
+                marketValue += holding.Quantity * price;
         return marketValue;
+    }
+
+    private async Task<DateOnly?> GetLatestDateAvailableAsync()
+    => await _dbContext.AccountSummaries
+        .Select(a => a.Date)
+        .OrderByDescending(d => d)
+        .FirstOrDefaultAsync();
+
+    public List<string> GetAccountNames()
+    {
+        return new List<string>(_accounts.Keys);
+    }
+
+    // Get an account by its name
+    public async Task<Account?> GetAccountAsync(string accountName)
+    {
+        DateOnly? date = await GetLatestDateAvailableAsync();
+        if (date is null)
+            return null;
+        // Use FirstOrDefaultAsync to handle case where account doesn't exist
+        Account? account = await _dbContext.Accounts
+                         .Include(a => a.Holdings) // optional, if you want related holdings
+                         .FirstOrDefaultAsync(a => a.Name == accountName);
+        if (account is null)
+            return null;
+
+        // Get the summary for this account & date
+        var summary = await _dbContext.AccountSummaries
+            .Where(s => s.Name == accountName && s.Date == date)
+            .FirstOrDefaultAsync();
+
+        account.MarketValue = summary?.MarketValue ?? 0.0;
+        return account;
+    }
+
+    public async Task CreateAccountAsync(Account account)
+    {
+        // Optional: check if account already exists
+        var exists = await _dbContext.Accounts
+                                     .AnyAsync(a => a.Name == account.Name);
+        if (exists)
+        {
+            throw new InvalidOperationException($"Account {account.Name} already exists.");
+        }
+
+        // Add the account along with its holdings
+        await _dbContext.Accounts.AddAsync(account);
+
+        // Save changes to persist both account and holdings
+        await _dbContext.SaveChangesAsync();
+    }
+
+    public async Task UpdateAccountAsync(Account account)
+    {
+        // Load existing account with holdings
+        var existing = await _dbContext.Accounts
+                                       .Include(a => a.Holdings)
+                                       .FirstOrDefaultAsync(a => a.Name == account.Name);
+
+        if (existing != null)
+        {
+            // Update scalar properties
+            _dbContext.Entry(existing).CurrentValues.SetValues(account);
+
+            // Build dictionaries for fast lookup
+            var existingDict = existing.HoldingsDict; // Dictionary<Symbol, Holding>
+            var updatedDict = account.HoldingsDict;   // Dictionary<Symbol, Holding>
+
+            // 1. Update existing holdings or add new ones
+            foreach (var kvp in updatedDict)
+            {
+                if (existingDict.TryGetValue(kvp.Key, out var existingHolding))
+                {
+                    // Update quantity (or other scalar properties)
+                    existingHolding.Quantity = kvp.Value.Quantity;
+                }
+                else
+                {
+                    // Add new holding
+                    existing.Holdings.Add(kvp.Value);
+                }
+            }
+
+            // 2. Remove holdings that no longer exist
+            var toRemove = existing.Holdings
+                                   .Where(h => !updatedDict.ContainsKey(h.Symbol))
+                                   .ToList();
+            foreach (var h in toRemove)
+            {
+                existing.Holdings.Remove(h);
+                _dbContext.Holdings.Remove(h);
+            }
+        }
+
+
+        await _dbContext.SaveChangesAsync();
     }
 
     public async Task BuildSummariesByDateAsync(DateOnly? asOf = null)

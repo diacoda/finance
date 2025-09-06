@@ -1,3 +1,6 @@
+using System.ComponentModel.DataAnnotations.Schema;
+namespace Finance.Tracking.Models;
+
 public class Account
 {
     public required string Name { get; set; }
@@ -8,12 +11,18 @@ public class Account
     // Define Currency as an enum for demonstration; replace with your actual Currency type if needed
     public Currency Currency { get; set; }
     public double Cash { get; set; }
-    public Dictionary<Symbol, Holding> Holdings { get; set; } = new();
+    // Change from Dictionary to ICollection<Holding>
+    public ICollection<Holding> Holdings { get; set; } = new List<Holding>();
+    // Expose a dictionary for fast lookup and convenience (not mapped to DB)
+    [NotMapped]
+    public Dictionary<Symbol, Holding> HoldingsDict
+    {
+        get => Holdings.ToDictionary(h => h.Symbol); // Symbol is enum
+        set => Holdings = value.Values.ToList();
+    }
 
     public Account()
     {
-        // Initialize Holdings to avoid null reference exceptions
-        Holdings = new Dictionary<Symbol, Holding>();
     }
 
     public bool IsRESP => Type == AccountType.RESP;
