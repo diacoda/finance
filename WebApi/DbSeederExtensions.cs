@@ -4,25 +4,18 @@ namespace Finance.Tracking;
 
 public static class DbSeederExtensions
 {
-    public static async Task SeedDatabasesAsync(this WebApplication app, IConfiguration config)
+    public static async Task SeedDatabasesAsync(this IServiceProvider services, IConfiguration config)
     {
-        using var scope = app.Services.CreateScope();
+        using var scope = services.CreateScope();
 
-        // 1️⃣ Ensure DBs exist
         EnsureDatabasesCreated(scope);
-
-        // 2️⃣ Seed Admin user & role
         await SeedAdminUserAsync(scope, config);
-
-        // 3️⃣ Load prices if enabled
         await LoadPricesAsync(scope);
-
-        // 4️⃣ Initialize accounts
         await InitializeAccountsAsync(scope);
     }
 
     // -------------------------
-    // 1️⃣ Ensure Databases Exist
+    // Ensure Databases Exist
     // -------------------------
     private static void EnsureDatabasesCreated(IServiceScope scope)
     {
@@ -34,7 +27,7 @@ public static class DbSeederExtensions
     }
 
     // -------------------------
-    // 2️⃣ Seed Admin User & Role
+    // Seed Admin User & Role
     // -------------------------
     private static async Task SeedAdminUserAsync(IServiceScope scope, IConfiguration config)
     {
@@ -69,7 +62,7 @@ public static class DbSeederExtensions
     }
 
     // -------------------------
-    // 3️⃣ Load Prices
+    // Load Prices
     // -------------------------
     private static async Task LoadPricesAsync(IServiceScope scope)
     {
@@ -82,7 +75,7 @@ public static class DbSeederExtensions
     }
 
     // -------------------------
-    // 4️⃣ Initialize Accounts
+    // Initialize Accounts
     // -------------------------
     private static async Task InitializeAccountsAsync(IServiceScope scope)
     {

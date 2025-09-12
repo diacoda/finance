@@ -2,6 +2,7 @@ readme.txt
 secrets.sh
 .vscode
 *.csv
+*.json
 *.numbers
 bin/
 obj/

@@ -45,7 +45,7 @@ public class PricingServiceTests
     }
 
     [Fact]
-    public async Task GetPrice_ReturnsDefault_IfNotFound()
+    public void GetPrice_ReturnsDefault_IfNotFound()
     {
         // Arrange
         using var db = CreateInMemoryDbContext();

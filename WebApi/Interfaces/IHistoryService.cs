@@ -1,6 +1,4 @@
-using System.Linq.Expressions;
-
-namespace Finance.Tracking.Services;
+namespace Finance.Tracking.Interfaces;
 
 public interface IHistoryService
 {

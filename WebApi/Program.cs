@@ -1,22 +1,12 @@
 ﻿using Finance.Tracking;
 
 var builder = WebApplication.CreateBuilder(args);
-
-// Configuration
-builder.Configuration.AddAppConfiguration<Program>();
-
-// Services / DI
-builder.Services.AddApplicationServices(builder.Configuration);
-
-// Build app
+builder.Configuration.AddAppConfiguration<Program>(builder.Environment);
+bool isTesting = builder.Environment.EnvironmentName == "Testing";
+builder.Services.AddApplicationServices(builder.Configuration, isTesting);
 var app = builder.Build();
-
-// Middleware / pipeline
 app.UseApplicationPipeline();
-
-// Seed DBs & initialize
-await app.SeedDatabasesAsync(builder.Configuration);
-
+await app.Services.SeedDatabasesAsync(builder.Configuration);
 app.Run();
 
 // For integration testing

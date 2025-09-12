@@ -1,4 +1,4 @@
-namespace Finance.Tracking.Services;
+namespace Finance.Tracking.Interfaces;
 
 using Finance.Tracking.Models;
 

@@ -1,11 +1,5 @@
-using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Net.Http.Json;
-using System.Threading.Tasks;
-using Finance.Tracking.Tests;
-using Finance.Tracking;
-using Xunit;
 
 namespace Finance.Tracking.Tests.Integration;
 
@@ -18,7 +12,6 @@ public class HistoryControllerIntegrationTests : IClassFixture<TestWebApplicatio
     {
         _factory = factory;
         _client = _factory.CreateClient();
-        // No need to add Authorization header; fake auth is default
     }
 
     [Fact]

@@ -20,7 +20,7 @@ public static class ApplicationBuilderExtensions
         return app;
     }
 
-    public static void UseSwaggerWithUI(this WebApplication app)
+    private static void UseSwaggerWithUI(this WebApplication app)
     {
         app.UseSwagger();
         app.UseSwaggerUI(c =>

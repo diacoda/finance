@@ -1,10 +1,8 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Moq;
-using Finance.Tracking.Services;
-using System.Linq;
 
 namespace Finance.Tracking.Tests.Integration;
 
@@ -22,14 +20,14 @@ public class TestWebApplicationFactory<TStartup> : WebApplicationFactory<TStartu
 
             // Add mocked IHistoryService
             services.AddSingleton(HistoryServiceMock.Object);
-
-            // Replace authentication with fake and set as default
+            // Configure fake authentication
             services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = "Fake";
                 options.DefaultChallengeScheme = "Fake";
             })
-            .AddScheme<AuthenticationSchemeOptions, FakeAuthHandler>("Fake", options => { });
+            .AddScheme<FakeAuthOptions, FakeAuthHandler>("Fake", options => { });
+
         });
     }
 }

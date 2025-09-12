@@ -3,23 +3,25 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
-using System.Threading.Tasks;
 
 namespace Finance.Tracking.Tests.Integration;
 
-public class FakeAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>
+public class FakeAuthHandler : AuthenticationHandler<FakeAuthOptions>
 {
     public FakeAuthHandler(
-        IOptionsMonitor<AuthenticationSchemeOptions> options,
+        IOptionsMonitor<FakeAuthOptions> options,
         ILoggerFactory logger,
-        UrlEncoder encoder,
-        ISystemClock clock)
-        : base(options, logger, encoder, clock)
+        UrlEncoder encoder)
+        : base(options, logger, encoder)
     { }
 
     protected override Task<AuthenticateResult> HandleAuthenticateAsync()
     {
-        var claims = new[] { new Claim(ClaimTypes.Name, "testuser") };
+        var claims = new[]
+        {
+            new Claim(ClaimTypes.Name, Options.Username),
+            new Claim(ClaimTypes.Role, "Admin")
+        };
         var identity = new ClaimsIdentity(claims, "Fake");
         var principal = new ClaimsPrincipal(identity);
         var ticket = new AuthenticationTicket(principal, "Fake");
