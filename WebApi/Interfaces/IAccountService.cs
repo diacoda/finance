@@ -10,6 +10,7 @@ public interface IAccountService
     public Task UpdateAccountAsync(Account account);
     Task BuildSummariesByDateAsync(DateOnly? asOf = null);
     Task<List<DateOnly>> GetLast30AvailableDatesAsync();
+    Task<List<DateOnly>> GetLastAvailableDatesAsync(int days);
     Task<List<AccountSummary>> GetAccountSummariesAsync(DateOnly asOf);
     Task<int> DeleteSummariesByDateAsync(DateOnly? asOf = null);
     Task<double> GetTotalMarketValueAsync(DateOnly asOf);

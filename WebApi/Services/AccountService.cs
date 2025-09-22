@@ -240,6 +240,14 @@ public class AccountService : IAccountService
             .Take(30)
             .ToListAsync();
 
+    public async Task<List<DateOnly>> GetLastAvailableDatesAsync(int days)
+        => await _dbContext.AccountSummaries
+            .Select(a => a.Date)
+            .Distinct()
+            .OrderByDescending(d => d)
+            .Take(days)
+            .ToListAsync();
+
     public async Task<int> DeleteSummariesByDateAsync(DateOnly? asOf = null)
     {
         var date = asOf ?? DateOnly.FromDateTime(DateTime.Today);

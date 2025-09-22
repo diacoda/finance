@@ -11,3 +11,5 @@ obj/
 Db/
 **/Db/
 .DS_Store
+publish/
+publish

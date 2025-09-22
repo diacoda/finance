@@ -56,10 +56,13 @@ public class AccountsController : ControllerBase
         return Ok(new { Message = $"Account summaries built for {date:yyyy-MM-dd}" });
     }
 
-    [HttpGet("latest-dates")]
-    public async Task<ActionResult<List<string>>> GetLatestDates()
+    [HttpGet("latest-dates/{days}")]
+    public async Task<ActionResult<List<string>>> GetLatestDates(int days = 30)
     {
-        var dates = await _accountService.GetLast30AvailableDatesAsync();
+        if (days <= 0)
+            return BadRequest("Days must be a positive integer.");
+
+        var dates = await _accountService.GetLastAvailableDatesAsync(days);
         return Ok(dates.Select(d => d.ToString("yyyy-MM-dd")).ToList());
     }
 
