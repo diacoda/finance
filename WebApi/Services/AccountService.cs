@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using System.Linq.Expressions;
+using Finance.Tracking.Models;
 
 namespace Finance.Tracking.Services;
 
@@ -77,23 +78,104 @@ public class AccountService : IAccountService
         }
     }
 
-
-    private AccountSummary BuildAccountSummary(Account account, IReadOnlyDictionary<Symbol, double> prices, DateOnly date)
+    public async Task BuildSummariesByDateAsync(DateOnly? asOf = null)
     {
-        account.MarketValue = CalculateMarketValue(account, prices);
+        var date = asOf ?? DateOnly.FromDateTime(DateTime.Today);
+        var prices = await _pricingService.LoadPricesAsync(date);
 
-        return new AccountSummary
+        // ✅ Use full composite PK (Name, Date, AssetClass)
+        var existingSummaries = await _dbContext.AccountSummaries
+            .Where(a => a.Date == date)
+            .ToDictionaryAsync(a => (a.Name, a.Date, a.AssetClass));
+
+        foreach (var account in _accounts.Values)
         {
-            Name = account.Name,
-            Owner = account.Owner,
-            Type = account.Type,
-            AccountFilter = account.AccountFilter,
-            Bank = account.Bank,
-            Currency = account.Currency,
-            Cash = account.Cash,
-            MarketValue = account.MarketValue,
-            Date = date
-        };
+            var summaries = BuildAccountSummaries(account, prices, date);
+
+            foreach (var summary in summaries)
+            {
+                var key = (summary.Name, summary.Date, summary.AssetClass);
+
+                if (existingSummaries.TryGetValue(key, out var existing))
+                {
+                    // ✅ Update existing tracked entity
+                    _dbContext.Entry(existing).CurrentValues.SetValues(summary);
+                }
+                else
+                {
+                    // ✅ Add new one
+                    await _dbContext.AccountSummaries.AddAsync(summary);
+                }
+            }
+        }
+
+        await _dbContext.SaveChangesAsync();
+    }
+
+    private IEnumerable<AccountSummary> BuildAccountSummaries(
+        Account account,
+        IReadOnlyDictionary<Symbol, double> prices,
+        DateOnly date)
+    {
+        var summaries = new List<AccountSummary>();
+
+        // ✅ Holdings grouped by AssetClass
+        var assetClassGroups = account.Holdings
+            .GroupBy(h => SymbolToAssetClass.Resolve(h.Symbol))
+            .Select(g => new AccountSummary
+            {
+                Name = account.Name,
+                Owner = account.Owner,
+                Type = account.Type,
+                AccountFilter = account.AccountFilter,
+                Bank = account.Bank,
+                Currency = account.Currency,
+                Cash = account.Cash, // keep original account-level cash
+                MarketValue = g.Sum(h =>
+                    prices.TryGetValue(h.Symbol, out var price)
+                        ? h.Quantity * price
+                        : 0.0),
+                Date = date,
+                AssetClass = g.Key
+            });
+
+        summaries.AddRange(assetClassGroups);
+
+        // ✅ Add account-level cash as its own AssetClass
+        if (account.Cash > 0)
+        {
+            summaries.Add(new AccountSummary
+            {
+                Name = account.Name,
+                Owner = account.Owner,
+                Type = account.Type,
+                AccountFilter = account.AccountFilter,
+                Bank = account.Bank,
+                Currency = account.Currency,
+                Cash = account.Cash,
+                MarketValue = account.Cash,
+                Date = date,
+                AssetClass = AssetClass.Cash
+            });
+        }
+
+        // ✅ Ensure uniqueness (Name, Date, AssetClass)
+        return summaries
+            .GroupBy(s => (s.Name, s.Date, s.AssetClass))
+            .Select(g => new AccountSummary
+            {
+                Name = g.Key.Name,
+                Date = g.Key.Date,
+                AssetClass = g.Key.AssetClass,
+                Owner = g.First().Owner,
+                Type = g.First().Type,
+                AccountFilter = g.First().AccountFilter,
+                Bank = g.First().Bank,
+                Currency = g.First().Currency,
+                Cash = g.First().Cash,
+                MarketValue = g.Sum(s => s.MarketValue)
+            })
+            .ToList();
     }
 
     private double CalculateMarketValue(Account account, IReadOnlyDictionary<Symbol, double> prices)
@@ -204,27 +286,76 @@ public class AccountService : IAccountService
         await _dbContext.SaveChangesAsync();
     }
 
-    public async Task BuildSummariesByDateAsync(DateOnly? asOf = null)
+    public async Task<Dictionary<AssetClass, double>> GetTotalMarketValueByAssetClassAsync(DateOnly? asOf = null)
     {
         var date = asOf ?? DateOnly.FromDateTime(DateTime.Today);
         var prices = await _pricingService.LoadPricesAsync(date);
 
-        var existingSummaries = await _dbContext.AccountSummaries
-            .Where(a => a.Date == date)
-            .ToDictionaryAsync(a => a.Name);
+        // Load accounts with holdings
+        var accounts = await _dbContext.Accounts
+            .Include(a => a.Holdings)
+            .ToListAsync();
 
-        foreach (var account in _accounts.Values)
-        {
-            var summary = BuildAccountSummary(account, prices, date);
+        var values = accounts
+            // holdings
+            .SelectMany(a => a.Holdings.Select(h => new
+            {
+                AssetClass = SymbolToAssetClass.Resolve(h.Symbol),
+                Value = prices.TryGetValue(h.Symbol, out var p) ? h.Quantity * p : 0
+            }))
+            // add cash
+            .Concat(accounts.Select(a => new
+            {
+                AssetClass = AssetClass.Cash,
+                Value = a.Cash
+            }))
+            .GroupBy(x => x.AssetClass)
+            .ToDictionary(
+                g => g.Key,
+                g => g.Sum(x => x.Value)
+            );
 
-            if (existingSummaries.TryGetValue(summary.Name, out var existing))
-                _dbContext.Entry(existing).CurrentValues.SetValues(summary);
-            else
-                await _dbContext.AccountSummaries.AddAsync(summary);
-        }
-
-        await _dbContext.SaveChangesAsync();
+        return values;
     }
+
+    public async Task<Dictionary<GroupKey<string, AssetClass>, double>> GetTotalMarketValueByOwnerAndAssetClassAsync(DateOnly? asOf = null)
+    {
+        var date = asOf ?? DateOnly.FromDateTime(DateTime.Today);
+        var prices = await _pricingService.LoadPricesAsync(date);
+
+        // Load accounts with holdings
+        var accounts = await _dbContext.Accounts
+            .Include(a => a.Holdings)
+            .ToListAsync();
+
+        var values = accounts
+            // holdings
+            .SelectMany(a => a.Holdings.Select(h => new
+            {
+                Owner = a.Owner,
+                AssetClass = SymbolToAssetClass.Resolve(h.Symbol),
+                Value = prices.TryGetValue(h.Symbol, out var p) ? h.Quantity * p : 0
+            }))
+            // add cash
+            .Concat(accounts.Select(a => new
+            {
+                Owner = a.Owner,
+                AssetClass = AssetClass.Cash,
+                Value = a.Cash
+            }))
+            .GroupBy(x => new GroupKey<string, AssetClass>
+            {
+                Item1 = x.Owner,
+                Item2 = x.AssetClass
+            })
+            .ToDictionary(
+                g => g.Key,
+                g => g.Sum(x => x.Value)
+            );
+
+        return values;
+    }
+
 
     public async Task<List<AccountSummary>> GetAccountSummariesAsync(DateOnly asOf)
         => await _dbContext.AccountSummaries

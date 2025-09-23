@@ -133,6 +133,28 @@ namespace Finance.Tracking.Controllers
             var total = await _portfolioService.GetTotalMarketValueWhereExpressionAsync(expr, query.AsOf);
             return Ok(total);
         }
+
+        /// <summary>
+        /// GET: api/portfolio/by-assetclass
+        /// </summary>
+        [HttpGet("by-assetclass")]
+        public async Task<ActionResult<List<AssetClassTotalDTO>>> GetTotalByAssetClassWithPercentage([FromQuery] DateOnly? asOf = null)
+        {
+            var result = await _portfolioService.GetTotalMarketValueGroupedByAssetClassWithPercentageAsync(asOf);
+
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// GET: api/portfolio/by-owner-assetclass
+        /// </summary>
+        [HttpGet("by-owner-assetclass")]
+        public async Task<ActionResult<List<OwnerAssetClassTotalDTO>>> GetTotalByOwnerAndAssetClassWithPercentages([FromQuery] DateOnly? asOf = null)
+        {
+            var result = await _portfolioService.GetTotalMarketValueGroupedByOwnerAndAssetClassWithPercentageAsync(asOf);
+            return Ok(result);
+        }
+
     }
 
 

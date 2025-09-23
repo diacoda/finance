@@ -11,5 +11,6 @@ public interface IPortfolioService
     Task<Dictionary<OwnerAccountFilterKey, double>> GetMarketValueByOwnerAndAccountFilterAsync(DateOnly? asOf = null);
     Task<Dictionary<OwnerTypeKey, double>> GetMarketValueByOwnerAndTypeAsync(DateOnly? asOf = null);
     //Task<Dictionary<OwnerTypeKey, double>> GetMarketValueByOwnerAndTypeAsync(DateOnly? asOf = null);
-
+    Task<List<AssetClassTotalDTO>> GetTotalMarketValueGroupedByAssetClassWithPercentageAsync(DateOnly? asOf = null);
+    Task<List<OwnerAssetClassTotalDTO>> GetTotalMarketValueGroupedByOwnerAndAssetClassWithPercentageAsync(DateOnly? asOf = null);
 }

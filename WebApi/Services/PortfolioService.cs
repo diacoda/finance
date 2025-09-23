@@ -13,18 +13,84 @@ public class PortfolioService : IPortfolioService
         _accountService = accountService ?? throw new ArgumentNullException(nameof(accountService));
     }
 
+    private async Task<Dictionary<AssetClass, double>> GetTotalMarketValueGroupedByAssetClassAsync(DateOnly? asOf = null)
+    {
+        return await _accountService.GetTotalMarketValueByAssetClassAsync(asOf);
+    }
+
+    public async Task<List<AssetClassTotalDTO>> GetTotalMarketValueGroupedByAssetClassWithPercentageAsync(DateOnly? asOf = null)
+    {
+        var totals = await GetTotalMarketValueGroupedByAssetClassAsync(asOf);
+        var grandTotal = totals.Values.Sum();
+
+        if (grandTotal <= 0)
+            return new List<AssetClassTotalDTO>();
+
+        var breakdown = totals.Select(kvp => new AssetClassTotalDTO
+        {
+            AssetClass = kvp.Key.ToString(),
+            Total = kvp.Value,
+            Percentage = (kvp.Value / grandTotal) * 100
+        }).ToList();
+
+        // normalize rounding drift
+        double totalPct = breakdown.Sum(b => b.Percentage);
+        double drift = 100 - totalPct;
+        if (Math.Abs(drift) > 0.0001)
+        {
+            var maxItem = breakdown.OrderByDescending(b => b.Percentage).First();
+            maxItem.Percentage += drift;
+        }
+
+        return breakdown;
+    }
+
+    private async Task<Dictionary<GroupKey<string, AssetClass>, double>> GetTotalMarketValueGroupedByOwnerAndAssetClassAsync(DateOnly? asOf = null)
+    {
+        return await _accountService.GetTotalMarketValueByOwnerAndAssetClassAsync(asOf);
+    }
+
+    public async Task<List<OwnerAssetClassTotalDTO>> GetTotalMarketValueGroupedByOwnerAndAssetClassWithPercentageAsync(DateOnly? asOf = null)
+    {
+        var totals = await GetTotalMarketValueGroupedByOwnerAndAssetClassAsync(asOf);
+
+        // group by owner to compute percentages relative to each owner
+        var result = new List<OwnerAssetClassTotalDTO>();
+        var groupedByOwner = totals.GroupBy(kvp => kvp.Key.Item1);
+
+        foreach (var ownerGroup in groupedByOwner)
+        {
+            double grandTotal = ownerGroup.Sum(x => x.Value);
+            if (grandTotal <= 0) continue;
+
+            var ownerBreakdown = ownerGroup.Select(kvp => new OwnerAssetClassTotalDTO
+            {
+                Owner = kvp.Key.Item1,
+                AssetClass = kvp.Key.Item2.ToString(),
+                Total = kvp.Value,
+                Percentage = (kvp.Value / grandTotal) * 100
+            }).ToList();
+
+            // normalize rounding drift to ensure exactly 100% per owner
+            double totalPct = ownerBreakdown.Sum(b => b.Percentage);
+            double drift = 100 - totalPct;
+            if (Math.Abs(drift) > 0.0001)
+            {
+                var maxItem = ownerBreakdown.OrderByDescending(b => b.Percentage).First();
+                maxItem.Percentage += drift;
+            }
+
+            result.AddRange(ownerBreakdown);
+        }
+
+        return result;
+    }
+
     public async Task<double> GetTotalMarketValueAsync(DateOnly? asOf = null)
     {
         var date = asOf ?? DateOnly.FromDateTime(DateTime.Today);
         return await _accountService.GetTotalMarketValueAsync(date);
     }
-
-    /*     public async Task<double> Total(Func<AccountSummary, bool> predicate, DateOnly? asOf = null)
-        {
-            var date = asOf ?? DateOnly.FromDateTime(DateTime.Today);
-            var allSummaries = await _accountService.GetAccountSummariesAsync(date);
-            return allSummaries.Where(predicate).Sum(a => a.MarketValue);
-        } */
 
     public async Task<double> GetTotalMarketValueWhereExpressionAsync(Expression<Func<AccountSummary, bool>> predicate, DateOnly? asOf = null)
     {

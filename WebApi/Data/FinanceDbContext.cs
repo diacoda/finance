@@ -19,7 +19,7 @@ public class FinanceDbContext : DbContext
     {
         modelBuilder.Entity<AccountSummary>()
             .ToTable("AccountSummaries", t => t.ExcludeFromMigrations())
-            .HasKey(a => new { a.Name, a.Date });
+            .HasKey(a => new { a.Name, a.Date, a.AssetClass });
 
         modelBuilder.Entity<Price>()
             .ToTable("Prices", t => t.ExcludeFromMigrations())

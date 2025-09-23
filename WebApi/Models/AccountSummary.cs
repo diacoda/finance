@@ -16,4 +16,5 @@ public class AccountSummary
     public double Cash { get; set; }
     public double MarketValue { get; set; }
     public DateOnly Date { get; set; } = DateOnly.FromDateTime(DateTime.UtcNow);
+    public AssetClass AssetClass { get; set; }
 }
