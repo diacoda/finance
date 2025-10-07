@@ -61,9 +61,9 @@ public class AccountService : IAccountService
     {
         // Get all account names that already exist in the database
         var existingAccountNames = await _dbContext.Accounts
-                                                   .Where(a => _accounts.Keys.Contains(a.Name))
-                                                   .Select(a => a.Name)
-                                                   .ToListAsync();
+                                            .Where(a => _accounts.Keys.Contains(a.Name))
+                                            .Select(a => a.Name)
+                                            .ToListAsync();
 
         // Filter only accounts that are missing
         var accountsToCreate = _accounts
@@ -108,7 +108,6 @@ public class AccountService : IAccountService
                 }
             }
         }
-
         await _dbContext.SaveChangesAsync();
     }
 
@@ -119,8 +118,21 @@ public class AccountService : IAccountService
     {
         var summaries = new List<AccountSummary>();
 
-        // ✅ Holdings grouped by AssetClass
-        var assetClassGroups = account.Holdings
+        // 1️⃣ Holdings grouped by AssetClass
+        summaries.AddRange(GroupByAssetClass(account, prices, date));
+
+        // 2️⃣ Add account-level cash
+        if (account.Cash > 0)
+            summaries.Add(AddCashSummary(account, date));
+
+        return summaries;
+    }
+    private IEnumerable<AccountSummary> GroupByAssetClass(
+        Account account,
+        IReadOnlyDictionary<Symbol, double> prices,
+        DateOnly date)
+    {
+        IEnumerable<AccountSummary> groupByAssetClass = account.Holdings
             .GroupBy(h => SymbolToAssetClass.Resolve(h.Symbol))
             .Select(g => new AccountSummary
             {
@@ -130,61 +142,33 @@ public class AccountService : IAccountService
                 AccountFilter = account.AccountFilter,
                 Bank = account.Bank,
                 Currency = account.Currency,
-                Cash = account.Cash, // keep original account-level cash
+                Cash = account.Cash,
+                Date = date,
+                AssetClass = g.Key,
                 MarketValue = g.Sum(h =>
                     prices.TryGetValue(h.Symbol, out var price)
                         ? h.Quantity * price
-                        : 0.0),
-                Date = date,
-                AssetClass = g.Key
+                        : 0.0)
             });
-
-        summaries.AddRange(assetClassGroups);
-
-        // ✅ Add account-level cash as its own AssetClass
-        if (account.Cash > 0)
-        {
-            summaries.Add(new AccountSummary
-            {
-                Name = account.Name,
-                Owner = account.Owner,
-                Type = account.Type,
-                AccountFilter = account.AccountFilter,
-                Bank = account.Bank,
-                Currency = account.Currency,
-                Cash = account.Cash,
-                MarketValue = account.Cash,
-                Date = date,
-                AssetClass = AssetClass.Cash
-            });
-        }
-
-        // ✅ Ensure uniqueness (Name, Date, AssetClass)
-        return summaries
-            .GroupBy(s => (s.Name, s.Date, s.AssetClass))
-            .Select(g => new AccountSummary
-            {
-                Name = g.Key.Name,
-                Date = g.Key.Date,
-                AssetClass = g.Key.AssetClass,
-                Owner = g.First().Owner,
-                Type = g.First().Type,
-                AccountFilter = g.First().AccountFilter,
-                Bank = g.First().Bank,
-                Currency = g.First().Currency,
-                Cash = g.First().Cash,
-                MarketValue = g.Sum(s => s.MarketValue)
-            })
-            .ToList();
+        return groupByAssetClass;
     }
 
-    private double CalculateMarketValue(Account account, IReadOnlyDictionary<Symbol, double> prices)
+    private AccountSummary AddCashSummary(Account account, DateOnly date)
     {
-        double marketValue = account.Cash;
-        foreach (var holding in account.Holdings)
-            if (prices.TryGetValue(holding.Symbol, out var price))
-                marketValue += holding.Quantity * price;
-        return marketValue;
+        AccountSummary cashSummary = new AccountSummary
+        {
+            Name = account.Name,
+            Owner = account.Owner,
+            Type = account.Type,
+            AccountFilter = account.AccountFilter,
+            Bank = account.Bank,
+            Currency = account.Currency,
+            Cash = account.Cash,
+            MarketValue = account.Cash,
+            Date = date,
+            AssetClass = AssetClass.Cash
+        };
+        return cashSummary;
     }
 
     private async Task<DateOnly?> GetLatestDateAvailableAsync()
@@ -205,29 +189,29 @@ public class AccountService : IAccountService
             date = await GetLatestDateAvailableAsync();
         if (date is null)
             return null;
-        // Use FirstOrDefaultAsync to handle case where account doesn't exist
+
         Account? account = await _dbContext.Accounts
-                         .Include(a => a.Holdings) // optional, if you want related holdings
-                         .FirstOrDefaultAsync(a => a.Name == accountName);
+            .Include(a => a.Holdings)
+            .FirstOrDefaultAsync(a => a.Name == accountName);
         if (account is null)
             return null;
 
-        // Get the summary for this account & date
-        var summary = await _dbContext.AccountSummaries
+        // ✅ Aggregate all summaries for this account & date
+        double totalMarketValue = await _dbContext.AccountSummaries
             .Where(s => s.Name == accountName && s.Date == date)
-            .FirstOrDefaultAsync();
-        if (summary == null)
-            return null;
+            .SumAsync(s => (double?)s.MarketValue) ?? 0.0;
 
-        account.MarketValue = summary?.MarketValue ?? 0.0;
+        account.MarketValue = totalMarketValue;
+
         return account;
     }
+
 
     public async Task CreateAccountAsync(Account account)
     {
         // Optional: check if account already exists
         var exists = await _dbContext.Accounts
-                                     .AnyAsync(a => a.Name == account.Name);
+                                .AnyAsync(a => a.Name == account.Name);
         if (exists)
         {
             throw new InvalidOperationException($"Account {account.Name} already exists.");
@@ -244,9 +228,8 @@ public class AccountService : IAccountService
     {
         // Load existing account with holdings
         var existing = await _dbContext.Accounts
-                                       .Include(a => a.Holdings)
-                                       .FirstOrDefaultAsync(a => a.Name == account.Name);
-
+                                    .Include(a => a.Holdings)
+                                    .FirstOrDefaultAsync(a => a.Name == account.Name);
         if (existing != null)
         {
             // Update scalar properties
@@ -273,16 +256,14 @@ public class AccountService : IAccountService
 
             // 2. Remove holdings that no longer exist
             var toRemove = existing.Holdings
-                                   .Where(h => !updatedDict.ContainsKey(h.Symbol))
-                                   .ToList();
+                                .Where(h => !updatedDict.ContainsKey(h.Symbol))
+                                .ToList();
             foreach (var h in toRemove)
             {
                 existing.Holdings.Remove(h);
                 _dbContext.Holdings.Remove(h);
             }
         }
-
-
         await _dbContext.SaveChangesAsync();
     }
 
