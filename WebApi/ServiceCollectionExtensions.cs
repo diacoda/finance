@@ -30,32 +30,34 @@ public static class ServiceCollectionExtensions
     // -----------------------------
     private static IServiceCollection AddDatabases(this IServiceCollection services, IConfiguration config, bool isTesting)
     {
-        if (isTesting)
+        if (false)
         {
-            // Create open SqliteConnection so EF won't automatically close it.
-            services.AddSingleton<DbConnection>(container =>
+            // Finance DB (separate in-memory connection)
+            services.AddSingleton<DbConnection>(sp =>
             {
-                var connection = new SqliteConnection("DataSource=:memory:");
-                connection.Open();
-
-                return connection;
+                var financeConn = new SqliteConnection("DataSource=:memory:");
+                financeConn.Open();
+                return financeConn;
             });
+            services.AddDbContext<FinanceDbContext>((sp, opt) =>
+                opt.UseSqlite(sp.GetRequiredService<DbConnection>()));
 
-            services.AddDbContext<IdentityDbContext>((container, options) =>
+            // Identity DB (separate persistent in-memory connection)
+            services.AddSingleton<DbConnection>(sp =>
             {
-                var connection = container.GetRequiredService<DbConnection>();
-                options.UseSqlite(connection);
+                var identityConn = new SqliteConnection("DataSource=:memory:");
+                identityConn.Open(); // keep alive for whole app lifetime
+                return identityConn;
             });
-
-            services.AddDbContext<FinanceDbContext>(options =>
-                options.UseInMemoryDatabase($"TestFiannceDb_{Guid.NewGuid().ToString()}"));
+            services.AddDbContext<IdentityDbContext>((sp, opt) =>
+                opt.UseSqlite(sp.GetRequiredService<DbConnection>()));
         }
         else
         {
-            var financeDbPath = PathHelper.GetPath(config.GetValue<string>("Database:FinancePath") ?? "finance.db");
+            var financeDbPath = PathHelper.GetPath(config.GetValue<string>("Database:FinancePath") ?? "financeqa.db");
             services.AddDbContext<FinanceDbContext>(opt => opt.UseSqlite($"Data Source={financeDbPath}"));
 
-            var identityDbPath = PathHelper.GetPath(config.GetValue<string>("Database:IdentityPath") ?? "identity.db");
+            var identityDbPath = PathHelper.GetPath(config.GetValue<string>("Database:IdentityPath") ?? "identityqa.db");
             services.AddDbContext<IdentityDbContext>(opt => opt.UseSqlite($"Data Source={identityDbPath}"));
         }
         return services;

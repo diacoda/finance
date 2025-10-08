@@ -11,7 +11,7 @@ public static class DbSeederExtensions
         EnsureDatabasesCreated(scope);
         await SeedAdminUserAsync(scope, config);
         await LoadPricesAsync(scope);
-        await InitializeAccountsAsync(scope);
+        //await InitializeAccountsAsync(scope);
     }
 
     // -------------------------
@@ -77,9 +77,11 @@ public static class DbSeederExtensions
     // -------------------------
     // Initialize Accounts
     // -------------------------
+    /*
     private static async Task InitializeAccountsAsync(IServiceScope scope)
     {
         var accountService = scope.ServiceProvider.GetRequiredService<IAccountService>();
-        await accountService.InitializeAsync();
+        //await accountService.InitializeAsync();
     }
+    */
 }

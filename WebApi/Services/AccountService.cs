@@ -7,7 +7,7 @@ namespace Finance.Tracking.Services;
 
 public class AccountService : IAccountService
 {
-    private Dictionary<string, Account> _accounts;
+    //private Dictionary<string, Account> _accounts;
     private IPricingService _pricingService;
     private IHistoryService _historyService;
     private FinanceDbContext _dbContext;
@@ -25,6 +25,7 @@ public class AccountService : IAccountService
         if (options?.Value?.Accounts == null || !options.Value.Accounts.Any())
             throw new ArgumentException("No accounts configured", nameof(options));
 
+        /*
         _accounts = new Dictionary<string, Account>();
 
         foreach (var (accountName, raw) in options.Value.Accounts)
@@ -55,8 +56,10 @@ public class AccountService : IAccountService
             }
             _accounts[accountName] = account;
         }
+        */
     }
 
+    /*
     public async Task InitializeAsync()
     {
         // Get all account names that already exist in the database
@@ -77,6 +80,7 @@ public class AccountService : IAccountService
             await _dbContext.SaveChangesAsync();
         }
     }
+    */
 
     public async Task BuildSummariesByDateAsync(DateOnly? asOf = null)
     {
@@ -88,7 +92,9 @@ public class AccountService : IAccountService
             .Where(a => a.Date == date)
             .ToDictionaryAsync(a => (a.Name, a.Date, a.AssetClass));
 
-        foreach (var account in _accounts.Values)
+        //foreach (var account in _accounts.Values)
+        //foreach (var account in _dbContext.Accounts)
+        foreach (var account in await _dbContext.Accounts.Include(a => a.Holdings).ToListAsync())
         {
             var summaries = BuildAccountSummaries(account, prices, date);
 
@@ -107,6 +113,8 @@ public class AccountService : IAccountService
                     await _dbContext.AccountSummaries.AddAsync(summary);
                 }
             }
+            // ✅ Recalculate & persist account total
+            //_dbContext.Entry(account).Property(a => a.MarketValue).IsModified = true;
         }
         await _dbContext.SaveChangesAsync();
     }
@@ -118,21 +126,25 @@ public class AccountService : IAccountService
     {
         var summaries = new List<AccountSummary>();
 
-        // 1️⃣ Holdings grouped by AssetClass
-        summaries.AddRange(GroupByAssetClass(account, prices, date));
+        var grouped = GroupByAssetClass(account, prices, date).ToList();
+        summaries.AddRange(grouped);
 
-        // 2️⃣ Add account-level cash
         if (account.Cash > 0)
             summaries.Add(AddCashSummary(account, date));
 
+        // (optional) total summary for debugging
+        double totalValue = grouped.Sum(s => s.MarketValue) + account.Cash;
+        account.MarketValue = totalValue;
+
         return summaries;
     }
+
     private IEnumerable<AccountSummary> GroupByAssetClass(
         Account account,
         IReadOnlyDictionary<Symbol, double> prices,
         DateOnly date)
     {
-        IEnumerable<AccountSummary> groupByAssetClass = account.Holdings
+        return account.Holdings
             .GroupBy(h => SymbolToAssetClass.Resolve(h.Symbol))
             .Select(g => new AccountSummary
             {
@@ -142,7 +154,7 @@ public class AccountService : IAccountService
                 AccountFilter = account.AccountFilter,
                 Bank = account.Bank,
                 Currency = account.Currency,
-                Cash = account.Cash,
+                Cash = 0, // ✅ don’t repeat cash here
                 Date = date,
                 AssetClass = g.Key,
                 MarketValue = g.Sum(h =>
@@ -150,7 +162,6 @@ public class AccountService : IAccountService
                         ? h.Quantity * price
                         : 0.0)
             });
-        return groupByAssetClass;
     }
 
     private AccountSummary AddCashSummary(Account account, DateOnly date)
@@ -179,7 +190,8 @@ public class AccountService : IAccountService
 
     public List<string> GetAccountNames()
     {
-        return new List<string>(_accounts.Keys);
+        //return new List<string>(_accounts.Keys);
+        return new List<string>(_dbContext.Accounts.Select(a => a.Name));
     }
 
     // Get an account by its name

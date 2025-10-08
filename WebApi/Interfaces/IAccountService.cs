@@ -4,7 +4,7 @@ namespace Finance.Tracking.Interfaces;
 
 public interface IAccountService
 {
-    public Task InitializeAsync();
+    //public Task InitializeAsync();
     public List<string> GetAccountNames();
     public Task<Account?> GetAccountByDateAsync(string accountName, DateOnly? date);
     public Task UpdateAccountAsync(Account account);

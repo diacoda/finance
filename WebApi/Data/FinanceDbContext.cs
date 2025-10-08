@@ -18,11 +18,11 @@ public class FinanceDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<AccountSummary>()
-            .ToTable("AccountSummaries", t => t.ExcludeFromMigrations())
+            .ToTable("AccountSummaries")//, t => t.ExcludeFromMigrations())
             .HasKey(a => new { a.Name, a.Date, a.AssetClass });
 
         modelBuilder.Entity<Price>()
-            .ToTable("Prices", t => t.ExcludeFromMigrations())
+            .ToTable("Prices")//, t => t.ExcludeFromMigrations())
             .HasKey(p => new { p.Symbol, p.Date });
 
         // Index on parsed fields for faster queries
