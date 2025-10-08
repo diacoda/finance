@@ -133,8 +133,8 @@ public class AccountService : IAccountService
             summaries.Add(AddCashSummary(account, date));
 
         // (optional) total summary for debugging
-        double totalValue = grouped.Sum(s => s.MarketValue) + account.Cash;
-        account.MarketValue = totalValue;
+        //double totalValue = grouped.Sum(s => s.MarketValue) + account.Cash;
+        //account.MarketValue = totalValue;
 
         return summaries;
     }
