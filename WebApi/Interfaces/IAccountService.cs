@@ -7,7 +7,7 @@ public interface IAccountService
     //public Task InitializeAsync();
     public List<string> GetAccountNames();
     public Task<Account?> GetAccountByDateAsync(string accountName, DateOnly? date);
-    public Task UpdateAccountAsync(Account account);
+    public Task<Account?> UpdateAccountAsync(Account account);
     Task BuildSummariesByDateAsync(DateOnly? asOf = null);
     Task<List<DateOnly>> GetLast30AvailableDatesAsync();
     Task<List<DateOnly>> GetLastAvailableDatesAsync(int days);

@@ -16,33 +16,43 @@ public class TransactionService : ITransactionService
         if (account is null)
             throw new NullReferenceException($"Account not found: {order.Account}");
 
-        double cash = order.Quantity * order.Price;
+        double cashChange = order.Quantity * order.Price;
 
         // Use dictionary safely
         var holdingsDict = account.HoldingsDict;
 
-        if (!holdingsDict.TryGetValue(order.Symbol, out var holding))
+        // Ensure CASH holding exists
+        if (!holdingsDict.TryGetValue(Symbol.CASH, out var cashHolding))
         {
-            // Create a new holding if it doesn't exist
-            holding = new Holding { Symbol = order.Symbol, Quantity = 0 };
-            account.Holdings.Add(holding); // EF Core tracks it
+            cashHolding = new Holding { Symbol = Symbol.CASH, Quantity = 0, AccountName = account.Name };
+            account.Holdings.Add(cashHolding);
+        }
+
+        // Ensure the target asset holding exists
+        if (!holdingsDict.TryGetValue(order.Symbol, out var assetHolding))
+        {
+            assetHolding = new Holding { Symbol = order.Symbol, Quantity = 0, AccountName = account.Name };
+            account.Holdings.Add(assetHolding);
         }
 
         switch (order.Side)
         {
             case OrderSide.Sell:
-                if (holding.Quantity < order.Quantity)
+                if (assetHolding.Quantity < order.Quantity)
                     throw new InvalidOperationException($"Not enough {order.Symbol} to sell.");
-                holding.Quantity -= order.Quantity;
-                account.Cash += cash;
+                assetHolding.Quantity -= order.Quantity;
+                cashHolding.Quantity += cashChange; // Add cash from sale
                 break;
 
             case OrderSide.Buy:
-                holding.Quantity += order.Quantity;
-                account.Cash -= cash;
+                if (cashHolding.Quantity < cashChange)
+                    throw new InvalidOperationException($"Not enough CASH to buy {order.Symbol}.");
+                assetHolding.Quantity += order.Quantity;
+                cashHolding.Quantity -= cashChange; // Subtract cash for purchase
                 break;
         }
 
         await _accountService.UpdateAccountAsync(account);
     }
+
 }

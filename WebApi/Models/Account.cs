@@ -10,7 +10,7 @@ public class Account
     public required Bank Bank { get; set; }
     // Define Currency as an enum for demonstration; replace with your actual Currency type if needed
     public Currency Currency { get; set; }
-    public double Cash { get; set; }
+    //public double Cash { get; set; }
     // Change from Dictionary to ICollection<Holding>
     public ICollection<Holding> Holdings { get; set; } = new List<Holding>();
     // Expose a dictionary for fast lookup and convenience (not mapped to DB)

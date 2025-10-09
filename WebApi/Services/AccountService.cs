@@ -92,7 +92,11 @@ public class AccountService : IAccountService
             .Where(a => a.Date == date)
             .ToDictionaryAsync(a => (a.Name, a.Date, a.AssetClass));
 
-        foreach (var account in await _dbContext.Accounts.Include(a => a.Holdings).ToListAsync())
+        var accounts = await _dbContext.Accounts
+            .Include(a => a.Holdings)
+            .ToListAsync();
+
+        foreach (var account in accounts)
         {
             var summaries = BuildAccountSummaries(account, prices, date);
 
@@ -112,27 +116,30 @@ public class AccountService : IAccountService
                 }
             }
             // ✅ Recalculate & persist account total
+            account.MarketValue = summaries.Sum(s => s.MarketValue);
             _dbContext.Entry(account).Property(a => a.MarketValue).IsModified = true;
         }
         await _dbContext.SaveChangesAsync();
     }
 
     private IEnumerable<AccountSummary> BuildAccountSummaries(
-        Account account,
-        IReadOnlyDictionary<Symbol, double> prices,
-        DateOnly date)
+    Account account,
+    IReadOnlyDictionary<Symbol, double> prices,
+    DateOnly date)
     {
         var summaries = new List<AccountSummary>();
 
-        var grouped = GroupByAssetClass(account, prices, date).ToList();
-        summaries.AddRange(grouped);
+        // Group non-cash holdings by AssetClass
+        var nonCashSummaries = GroupByAssetClass(account, prices, date).ToList();
+        summaries.AddRange(nonCashSummaries);
 
-        if (account.Cash > 0)
-            summaries.Add(AddCashSummary(account, date));
+        // Derive cash from holdings
+        double cashValue = account.Holdings
+            .Where(h => h.Symbol == Symbol.CASH)
+            .Sum(h => h.Quantity);
 
-        // (optional) total summary for debugging
-        double totalValue = grouped.Sum(s => s.MarketValue) + account.Cash;
-        account.MarketValue = totalValue;
+        if (cashValue > 0)
+            summaries.Add(BuildCashSummary(account, cashValue, date));
 
         return summaries;
     }
@@ -142,7 +149,9 @@ public class AccountService : IAccountService
         IReadOnlyDictionary<Symbol, double> prices,
         DateOnly date)
     {
+        // Skip CASH here; it’s handled separately
         return account.Holdings
+            .Where(h => h.Symbol != Symbol.CASH)
             .GroupBy(h => SymbolToAssetClass.Resolve(h.Symbol))
             .Select(g => new AccountSummary
             {
@@ -152,7 +161,6 @@ public class AccountService : IAccountService
                 AccountFilter = account.AccountFilter,
                 Bank = account.Bank,
                 Currency = account.Currency,
-                Cash = 0, // ✅ don’t repeat cash here
                 Date = date,
                 AssetClass = g.Key,
                 MarketValue = g.Sum(h =>
@@ -162,9 +170,9 @@ public class AccountService : IAccountService
             });
     }
 
-    private AccountSummary AddCashSummary(Account account, DateOnly date)
+    private AccountSummary BuildCashSummary(Account account, double cashValue, DateOnly date)
     {
-        AccountSummary cashSummary = new AccountSummary
+        return new AccountSummary
         {
             Name = account.Name,
             Owner = account.Owner,
@@ -172,12 +180,10 @@ public class AccountService : IAccountService
             AccountFilter = account.AccountFilter,
             Bank = account.Bank,
             Currency = account.Currency,
-            Cash = account.Cash,
-            MarketValue = account.Cash,
             Date = date,
-            AssetClass = AssetClass.Cash
+            AssetClass = AssetClass.Cash,
+            MarketValue = cashValue
         };
-        return cashSummary;
     }
 
     private async Task<DateOnly?> GetLatestDateAvailableAsync()
@@ -234,7 +240,7 @@ public class AccountService : IAccountService
         await _dbContext.SaveChangesAsync();
     }
 
-    public async Task UpdateAccountAsync(Account account)
+    public async Task<Account?> UpdateAccountAsync(Account account)
     {
         // Load existing account with holdings
         var existing = await _dbContext.Accounts
@@ -275,6 +281,23 @@ public class AccountService : IAccountService
             }
         }
         await _dbContext.SaveChangesAsync();
+        return existing;
+    }
+
+    private double CalculateMarketValue(Account account, IReadOnlyDictionary<Symbol, double> prices)
+    {
+        double marketValue = 0.0;
+        foreach (var holding in account.Holdings)
+        {
+            if (holding.Symbol == Symbol.CASH)
+            {
+                marketValue += holding.Quantity; // Cash is added directly
+                continue;
+            }
+            if (prices.TryGetValue(holding.Symbol, out var price))
+                marketValue += holding.Quantity * price;
+        }
+        return marketValue;
     }
 
     public async Task<Dictionary<AssetClass, double>> GetTotalMarketValueByAssetClassAsync(DateOnly? asOf = null)
@@ -288,18 +311,22 @@ public class AccountService : IAccountService
             .ToListAsync();
 
         var values = accounts
-            // holdings
-            .SelectMany(a => a.Holdings.Select(h => new
-            {
-                AssetClass = SymbolToAssetClass.Resolve(h.Symbol),
-                Value = prices.TryGetValue(h.Symbol, out var p) ? h.Quantity * p : 0
-            }))
-            // add cash
-            .Concat(accounts.Select(a => new
-            {
-                AssetClass = AssetClass.Cash,
-                Value = a.Cash
-            }))
+            // Non-cash holdings
+            .SelectMany(a => a.Holdings
+                .Where(h => h.Symbol != Symbol.CASH)
+                .Select(h => new
+                {
+                    AssetClass = SymbolToAssetClass.Resolve(h.Symbol),
+                    Value = prices.TryGetValue(h.Symbol, out var p) ? h.Quantity * p : 0.0
+                }))
+            // Cash holdings
+            .Concat(accounts.SelectMany(a => a.Holdings
+                .Where(h => h.Symbol == Symbol.CASH)
+                .Select(h => new
+                {
+                    AssetClass = AssetClass.Cash,
+                    Value = h.Quantity
+                })))
             .GroupBy(x => x.AssetClass)
             .ToDictionary(
                 g => g.Key,
@@ -314,26 +341,29 @@ public class AccountService : IAccountService
         var date = asOf ?? DateOnly.FromDateTime(DateTime.Today);
         var prices = await _pricingService.LoadPricesAsync(date);
 
-        // Load accounts with holdings
         var accounts = await _dbContext.Accounts
             .Include(a => a.Holdings)
             .ToListAsync();
 
         var values = accounts
-            // holdings
-            .SelectMany(a => a.Holdings.Select(h => new
-            {
-                Owner = a.Owner,
-                AssetClass = SymbolToAssetClass.Resolve(h.Symbol),
-                Value = prices.TryGetValue(h.Symbol, out var p) ? h.Quantity * p : 0
-            }))
-            // add cash
-            .Concat(accounts.Select(a => new
-            {
-                Owner = a.Owner,
-                AssetClass = AssetClass.Cash,
-                Value = a.Cash
-            }))
+            // Non-cash holdings
+            .SelectMany(a => a.Holdings
+                .Where(h => h.Symbol != Symbol.CASH)
+                .Select(h => new
+                {
+                    Owner = a.Owner,
+                    AssetClass = SymbolToAssetClass.Resolve(h.Symbol),
+                    Value = prices.TryGetValue(h.Symbol, out var p) ? h.Quantity * p : 0.0
+                }))
+            // Cash holdings
+            .Concat(accounts.SelectMany(a => a.Holdings
+                .Where(h => h.Symbol == Symbol.CASH)
+                .Select(h => new
+                {
+                    Owner = a.Owner,
+                    AssetClass = AssetClass.Cash,
+                    Value = h.Quantity
+                })))
             .GroupBy(x => new GroupKey<string, AssetClass>
             {
                 Item1 = x.Owner,
@@ -346,7 +376,6 @@ public class AccountService : IAccountService
 
         return values;
     }
-
 
     public async Task<List<AccountSummary>> GetAccountSummariesAsync(DateOnly asOf)
         => await _dbContext.AccountSummaries

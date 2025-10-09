@@ -1,8 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using Finance.Tracking.Services;
 using Microsoft.AspNetCore.Authorization;
-using System.Threading.Tasks;
-using Finance.Tracking.Models;
 
 namespace Finance.Tracking.Controllers;
 
@@ -32,10 +29,15 @@ public class AccountsController : ControllerBase
         if (account is null)
             return NotFound($"Account '{accountName}' not found.");
 
+        // Compute cash from holdings
+        double cash = account.Holdings
+            .Where(h => h.Symbol == Symbol.CASH)
+            .Sum(h => h.Quantity);
+
         var dto = new AccountDTO
         {
             Name = account.Name,
-            Cash = account.Cash,
+            Cash = cash, //account.Cash,
             Holdings = account.Holdings
                 .Select(h => new HoldingDTO
                 {
@@ -47,34 +49,6 @@ public class AccountsController : ControllerBase
         };
 
         return Ok(dto);
-    }
-
-    private Account MapDtoToAccount(AccountDTO dto)
-    {
-        var parts = dto.Name.Split('-', StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length != 4)
-            throw new ArgumentException($"Invalid account key: {dto.Name}");
-
-        var parsedType = Enum.Parse<AccountType>(parts[2], true);
-
-        var account = new Account
-        {
-            Name = dto.Name,
-            Owner = parts[0],
-            Bank = Enum.Parse<Bank>(parts[1], true),
-            Type = parsedType,
-            AccountFilter = parsedType.ToAccountFilter(),
-            MarketValue = 0,
-            Currency = Enum.Parse<Currency>(parts[3], true),
-            Cash = dto.Cash,
-            Holdings = dto.Holdings.Select(h => new Holding
-            {
-                Symbol = h.Symbol,           // no parsing needed
-                Quantity = h.Quantity,
-                AccountName = dto.Name
-            }).ToList()
-        };
-        return account;
     }
 
     [HttpPut("names/{accountName}")]
@@ -91,9 +65,13 @@ public class AccountsController : ControllerBase
 
         try
         {
-            var account = MapDtoToAccount(accountDTO);
-            await _accountService.UpdateAccountAsync(account);
-            return Ok();
+            var account = MappingExtensions.MapDtoToAccount(accountDTO);
+            account = await _accountService.UpdateAccountAsync(account);
+            if (account == null)
+                return StatusCode(500, $"Internal Server Error: account null after update.");
+
+            var dto = MappingExtensions.MapAccountToDto(account);
+            return Ok(dto);
         }
         catch (KeyNotFoundException ex)
         {
@@ -101,7 +79,8 @@ public class AccountsController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, "An error occurred while updating the account.");
+            Console.WriteLine($"❌ Error updating account {accountName}: {ex}");
+            return StatusCode(500, $"Internal Server Error: {ex.Message}");
         }
     }
 

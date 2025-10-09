@@ -13,7 +13,7 @@ public class AccountSummary
     public required Bank Bank { get; set; }
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public Currency Currency { get; set; }
-    public double Cash { get; set; }
+    public double Cash { get; set; } = 0.0;
     public double MarketValue { get; set; }
     public DateOnly Date { get; set; } = DateOnly.FromDateTime(DateTime.UtcNow);
     public AssetClass AssetClass { get; set; }
