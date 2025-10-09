@@ -16,6 +16,8 @@ public enum Symbol
     TRI,
     ZGLD_TO,
     VDY_TO,
-    VI_TO
+    VI_TO,
+    CASH,
+    ZGLH_TO
 
 }

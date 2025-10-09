@@ -92,8 +92,6 @@ public class AccountService : IAccountService
             .Where(a => a.Date == date)
             .ToDictionaryAsync(a => (a.Name, a.Date, a.AssetClass));
 
-        //foreach (var account in _accounts.Values)
-        //foreach (var account in _dbContext.Accounts)
         foreach (var account in await _dbContext.Accounts.Include(a => a.Holdings).ToListAsync())
         {
             var summaries = BuildAccountSummaries(account, prices, date);
@@ -114,7 +112,7 @@ public class AccountService : IAccountService
                 }
             }
             // ✅ Recalculate & persist account total
-            //_dbContext.Entry(account).Property(a => a.MarketValue).IsModified = true;
+            _dbContext.Entry(account).Property(a => a.MarketValue).IsModified = true;
         }
         await _dbContext.SaveChangesAsync();
     }
@@ -133,8 +131,8 @@ public class AccountService : IAccountService
             summaries.Add(AddCashSummary(account, date));
 
         // (optional) total summary for debugging
-        //double totalValue = grouped.Sum(s => s.MarketValue) + account.Cash;
-        //account.MarketValue = totalValue;
+        double totalValue = grouped.Sum(s => s.MarketValue) + account.Cash;
+        account.MarketValue = totalValue;
 
         return summaries;
     }

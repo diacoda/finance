@@ -7,6 +7,8 @@ public static class SymbolExtensions
     /// </summary>
     public static string ToTicker(this Symbol symbol) => symbol switch
     {
+        Symbol.CASH => "CASH",
+        Symbol.ZGLH_TO => "ZGLH.TO",
         Symbol.VFV_TO => "VFV.TO",
         Symbol.VCE_TO => "VCE.TO",
         Symbol.HXQ_TO => "HXQ.TO",

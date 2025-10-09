@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Finance.Tracking.WebApi", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Finance.Tracking.WebApi.Test", "WebApi.Test\Finance.Tracking.WebApi.Test.csproj", "{1FC12D57-A8A4-4244-86B4-7932DCC43038}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CashMigration", "CashMigration\CashMigration.csproj", "{7CCFDCE9-89CC-41B4-BCDF-73C48289F267}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -41,6 +43,18 @@ Global
 		{1FC12D57-A8A4-4244-86B4-7932DCC43038}.Release|x64.Build.0 = Release|Any CPU
 		{1FC12D57-A8A4-4244-86B4-7932DCC43038}.Release|x86.ActiveCfg = Release|Any CPU
 		{1FC12D57-A8A4-4244-86B4-7932DCC43038}.Release|x86.Build.0 = Release|Any CPU
+		{7CCFDCE9-89CC-41B4-BCDF-73C48289F267}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7CCFDCE9-89CC-41B4-BCDF-73C48289F267}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7CCFDCE9-89CC-41B4-BCDF-73C48289F267}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{7CCFDCE9-89CC-41B4-BCDF-73C48289F267}.Debug|x64.Build.0 = Debug|Any CPU
+		{7CCFDCE9-89CC-41B4-BCDF-73C48289F267}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{7CCFDCE9-89CC-41B4-BCDF-73C48289F267}.Debug|x86.Build.0 = Debug|Any CPU
+		{7CCFDCE9-89CC-41B4-BCDF-73C48289F267}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7CCFDCE9-89CC-41B4-BCDF-73C48289F267}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7CCFDCE9-89CC-41B4-BCDF-73C48289F267}.Release|x64.ActiveCfg = Release|Any CPU
+		{7CCFDCE9-89CC-41B4-BCDF-73C48289F267}.Release|x64.Build.0 = Release|Any CPU
+		{7CCFDCE9-89CC-41B4-BCDF-73C48289F267}.Release|x86.ActiveCfg = Release|Any CPU
+		{7CCFDCE9-89CC-41B4-BCDF-73C48289F267}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
