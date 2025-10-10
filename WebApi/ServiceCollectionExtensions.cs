@@ -124,6 +124,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IYahooService, YahooService>();
         services.AddScoped<IPricingService, PricingService>();
         services.AddScoped<IHistoryService, HistoryService>();
+        services.AddScoped<IValuationService, ValuationService>();
         services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<IPortfolioService, PortfolioService>();
         services.AddScoped<ITransactionService, TransactionService>();

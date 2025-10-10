@@ -18,6 +18,7 @@ public static class MappingExtensions
         {
             Name = account.Name,
             Cash = cashHolding?.Quantity ?? 0.0,
+            MarketValue = account.MarketValue,
             Holdings = account.Holdings
                 .Select(h => new HoldingDTO
                 {

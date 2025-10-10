@@ -17,9 +17,9 @@ public class AccountsController : ControllerBase
     }
 
     [HttpGet("names")]
-    public List<string> GetAccountNames()
+    public async Task<List<string>> GetAccountNames()
     {
-        return _accountService.GetAccountNames();
+        return await _accountService.GetAccountNamesAsync();
     }
 
     [HttpGet("names/{accountName}")]
