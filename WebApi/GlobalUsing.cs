@@ -5,3 +5,4 @@ global using Finance.Tracking.Data;
 global using Finance.Tracking.DTO;
 global using Finance.Tracking.Extensions;
 global using Finance.Tracking.Interfaces;
+global using Finance.Tracking.Repository;
