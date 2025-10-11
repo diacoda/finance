@@ -1,11 +1,8 @@
-﻿using Finance.Tracking.Data;
-using Finance.Tracking.Models;
-using Finance.Tracking.Models.Enums;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 
 Console.WriteLine("Starting cash holdings migration...");
 
-string connectionString = "Data Source=" + PathHelper.GetPath("Db/financeqa.db"); // adjust path as needed
+string connectionString = "Data Source=" + PathHelper.GetPath("Db/finance.db"); // adjust path as needed
 var options = new DbContextOptionsBuilder<FinanceDbContext>()
     .UseSqlite(connectionString) // adjust path as needed
     .Options;
