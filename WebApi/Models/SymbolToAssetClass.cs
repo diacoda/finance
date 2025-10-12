@@ -29,10 +29,13 @@ public static class SymbolToAssetClass
 
         // Commodities
         [Symbol.ZGLD_TO] = AssetClass.Gold,
+        [Symbol.ZGLH_TO] = AssetClass.Gold,
 
         // Crypto
         [Symbol.BTCC_TO] = AssetClass.Cryptocurrency,
 
+        // Cash
+        [Symbol.CASH] = AssetClass.Cash
         // Fallback
         // Any unmapped symbol = Other
     };
