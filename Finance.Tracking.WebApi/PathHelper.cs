@@ -1,6 +1,8 @@
 using System;
 using System.IO;
 
+namespace Finance.Tracking.WebApi;
+
 public static class PathHelper
 {
     public static string GetPath(string fileName)

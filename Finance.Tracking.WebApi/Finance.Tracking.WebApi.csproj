@@ -4,7 +4,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <RootNamespace>Finance.Tracking</RootNamespace>
+    <RootNamespace>Finance.Tracking.WebApi</RootNamespace>
     <UserSecretsId>aa68f3da-e87a-4f43-934b-618b4ab85e9e</UserSecretsId>
   </PropertyGroup>
 

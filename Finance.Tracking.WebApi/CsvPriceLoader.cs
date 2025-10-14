@@ -3,7 +3,7 @@ using System.Text;
 using System.IO;
 using System.Collections.Generic;
 
-namespace Finance.Tracking;
+namespace Finance.Tracking.WebApi;
 
 public static class CsvPriceLoader
 {

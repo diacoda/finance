@@ -1,6 +1,4 @@
-﻿using Finance.Tracking;
-
-var builder = WebApplication.CreateBuilder(args);
+﻿var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddAppConfiguration<Program>(builder.Environment);
 bool isTesting = builder.Environment.EnvironmentName == "Testing";
 builder.Services.AddApplicationServices(builder.Configuration, isTesting);

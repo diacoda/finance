@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using System;
 
-namespace Finance.Tracking;
+namespace Finance.Tracking.WebApi;
 
 public class HttpResponseExceptionFilter : IExceptionFilter
 {

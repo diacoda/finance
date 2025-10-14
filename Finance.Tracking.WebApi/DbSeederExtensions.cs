@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 
-namespace Finance.Tracking;
+namespace Finance.Tracking.WebApi;
 
 public static class DbSeederExtensions
 {

@@ -1,0 +1,20 @@
+using Finance.Infrastructure.Persistence;
+using Finance.Infrastructure.Repositories;
+using Finance.Application.Services;
+using Finance.Domain.Repositories;
+using Microsoft.EntityFrameworkCore;
+using Finance.WebApi;
+var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddApplicationServices(builder.Configuration);
+builder.Services.AddDbContext<AppDbContext>(options => options.UseInMemoryDatabase("WebApiDb"));
+builder.Services.AddScoped<IAccountRepository, AccountRepository>();
+builder.Services.AddScoped<IAccountService, AccountService>();
+var app = builder.Build();
+app.UseApplicationPipeline();
+app.UseHttpsRedirection();
+app.UseAuthorization();
+app.MapControllers();
+app.Run();
+

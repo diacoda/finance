@@ -1,5 +1,5 @@
 
-namespace Finance.Tracking;
+namespace Finance.Tracking.WebApi;
 
 public static class ConfigurationExtensions
 {

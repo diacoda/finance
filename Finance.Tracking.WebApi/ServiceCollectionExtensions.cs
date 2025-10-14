@@ -7,7 +7,7 @@ using Microsoft.OpenApi.Models;
 using System.Data.Common;
 using System.Text;
 
-namespace Finance.Tracking;
+namespace Finance.Tracking.WebApi;
 
 public static class ServiceCollectionExtensions
 {

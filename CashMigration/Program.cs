@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Finance.Tracking.WebApi;
 
 Console.WriteLine("Starting cash holdings migration...");
 

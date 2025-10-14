@@ -1,4 +1,4 @@
-namespace Finance.Tracking;
+namespace Finance.Tracking.WebApi;
 
 public class JwtOptions
 {

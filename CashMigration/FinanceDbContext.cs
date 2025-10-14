@@ -1,7 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 
-
-
 public class FinanceDbContext : DbContext
 {
     public DbSet<Account> Accounts { get; set; } = default!;
