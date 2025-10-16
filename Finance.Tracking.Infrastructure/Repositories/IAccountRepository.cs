@@ -1,8 +1,7 @@
-using Finance.Tracking.Models;
 using Microsoft.EntityFrameworkCore.Storage;
 using System.Linq.Expressions;
 
-namespace Finance.Tracking.Repository;
+namespace Finance.Tracking.Infrastructure.Repositories;
 
 public interface IAccountRepository
 {

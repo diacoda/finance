@@ -1,7 +1,7 @@
 using System.Collections.Generic;
-using Finance.Tracking.Models.Enums;
+using Finance.Tracking.Domain.Enums;
 
-namespace Finance.Tracking.Models;
+namespace Finance.Tracking.Domain;
 
 public static class SymbolToAssetClass
 {

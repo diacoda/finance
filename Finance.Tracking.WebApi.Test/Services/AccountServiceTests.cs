@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Finance.Tracking.Models;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
 namespace Finance.Tracking.Tests.Services;
@@ -22,11 +23,11 @@ public class AccountServiceTests
         var accountOptions = new OptionsWrapper<AccountOptions>(
             new AccountOptions
             {
-                Accounts = new Dictionary<string, AccountRaw>
+                Accounts = new Dictionary<string, AccountConfiguration>
                 {
                     {
                         "Dan-TD-TFSA-USD",
-                        new AccountRaw
+                        new AccountConfiguration
                         {
                             Cash = 1000,
                             Holdings = new Dictionary<string, Holding>
@@ -38,7 +39,7 @@ public class AccountServiceTests
                     },
                     {
                         "Oana-WS-RRSP-USD",
-                        new AccountRaw
+                        new AccountConfiguration
                         {
                             Cash = 5000,
                             Holdings = new Dictionary<string, Holding>()

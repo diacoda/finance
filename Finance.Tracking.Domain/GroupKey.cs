@@ -1,4 +1,4 @@
-namespace Finance.Tracking.Models;
+namespace Finance.Tracking.Domain;
 /// <summary>
 /// Simple composite key helper used for grouping results of two keys.
 /// </summary>

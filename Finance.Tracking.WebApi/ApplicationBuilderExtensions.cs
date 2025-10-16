@@ -6,7 +6,7 @@ public static class ApplicationBuilderExtensions
     {
         app.UseStaticFiles();
 
-        if (app.Environment.IsDevelopment())
+        if (app.Environment.IsDevelopment() || app.Environment.EnvironmentName == "Testing")
         {
             app.UseSwaggerWithUI();
         }
@@ -25,7 +25,8 @@ public static class ApplicationBuilderExtensions
         app.UseSwagger();
         app.UseSwaggerUI(c =>
         {
-            c.SwaggerEndpoint("/swagger/v1/swagger.json", "Finance API v1");
+            string env = app.Environment.EnvironmentName;
+            c.SwaggerEndpoint("/swagger/v1/swagger.json", $"{env}: Finance API v1");
             c.RoutePrefix = "swagger";
             c.DocExpansion(Swashbuckle.AspNetCore.SwaggerUI.DocExpansion.None);
             c.InjectJavascript("/swagger/custom-swagger.js");

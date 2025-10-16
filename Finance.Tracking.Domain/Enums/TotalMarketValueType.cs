@@ -1,4 +1,4 @@
-namespace Finance.Tracking.Models.Enums;
+namespace Finance.Tracking.Domain.Enums;
 
 public enum TotalMarketValueType
 {

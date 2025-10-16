@@ -1,8 +1,3 @@
-using System.Collections.Generic;
-using Finance.Tracking.Models.Enums;
-
-
-
 public static class SymbolToAssetClass
 {
     public static readonly Dictionary<Symbol, AssetClass> Map = new()

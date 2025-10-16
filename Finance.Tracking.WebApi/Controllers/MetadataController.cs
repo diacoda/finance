@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using Finance.Tracking.Models;
 using Microsoft.AspNetCore.Authorization;
 
 namespace Finance.Tracking.Controllers;

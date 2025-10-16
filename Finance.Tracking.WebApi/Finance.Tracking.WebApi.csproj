@@ -39,6 +39,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="../Finance.Tracking.Application/Finance.Tracking.Application.csproj" />
+    <ProjectReference Include="../Finance.Tracking.Domain/Finance.Tracking.Domain.csproj" />
+    <ProjectReference Include="../Finance.Tracking.Infrastructure/Finance.Tracking.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

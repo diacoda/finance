@@ -128,6 +128,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<IAccountRepository, AccountRepository>();
         services.AddScoped<IAccountSummaryRepository, AccountSummaryRepository>();
+        services.AddScoped<ITotalMarketValueRepository, TotalMarketValueRepository>();
         services.AddScoped<IPortfolioService, PortfolioService>();
         services.AddScoped<ITransactionService, TransactionService>();
         return services;

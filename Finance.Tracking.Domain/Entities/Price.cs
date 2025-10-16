@@ -1,4 +1,4 @@
-namespace Finance.Tracking.Models;
+namespace Finance.Tracking.Domain.Entities;
 
 public class Price
 {

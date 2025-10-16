@@ -1,9 +1,10 @@
 global using Finance.Tracking.Models;
-global using Finance.Tracking.Models.Enums;
 global using Finance.Tracking.Services;
-global using Finance.Tracking.Data;
 global using Finance.Tracking.DTO;
 global using Finance.Tracking.Extensions;
 global using Finance.Tracking.Interfaces;
-global using Finance.Tracking.Repository;
 global using Finance.Tracking.WebApi;
+global using Finance.Tracking.Domain.Enums;
+global using Finance.Tracking.Domain.Entities;
+global using Finance.Tracking.Domain;
+global using Finance.Tracking.Infrastructure.Repositories;

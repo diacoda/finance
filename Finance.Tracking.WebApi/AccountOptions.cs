@@ -2,5 +2,5 @@ namespace Finance.Tracking.WebApi;
 
 public class AccountOptions
 {
-    public Dictionary<string, AccountRaw> Accounts { get; set; } = new();
+    public Dictionary<string, AccountConfiguration> Accounts { get; set; } = new();
 }

@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
-namespace Finance.Tracking.Data;
+namespace Finance.Tracking.Infrastructure.Repositories;
 
 public class FinanceDbContext : DbContext
 {

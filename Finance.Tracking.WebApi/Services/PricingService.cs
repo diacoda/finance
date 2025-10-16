@@ -124,7 +124,7 @@ public class PricingService : IPricingService
             var price = Prices[symbol];
             cached[symbol] = price; // update cached dictionary
 
-            _dbContext.Prices.Add(new Models.Price
+            _dbContext.Prices.Add(new Price
             {
                 Symbol = symbol,
                 Date = actualDate,
@@ -169,7 +169,7 @@ public class PricingService : IPricingService
         }
         else
         {
-            _dbContext.Prices.Add(new Models.Price
+            _dbContext.Prices.Add(new Price
             {
                 Symbol = symbol,
                 Date = actualDate,

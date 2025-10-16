@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace Finance.Tracking.Models;
+namespace Finance.Tracking.Domain.Entities;
 
 public class AccountSummary
 {

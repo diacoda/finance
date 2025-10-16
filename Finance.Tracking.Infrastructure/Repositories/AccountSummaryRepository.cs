@@ -1,8 +1,7 @@
-using Finance.Tracking.Models;
+namespace Finance.Tracking.Infrastructure.Repositories;
+
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
-
-namespace Finance.Tracking.Repository;
 
 public class AccountSummaryRepository : IAccountSummaryRepository
 {
@@ -100,6 +99,18 @@ public class AccountSummaryRepository : IAccountSummaryRepository
             .ToDictionary(g => g.Key, g => g.Sum(x => x.MarketValue));
     }
 
+
+
+    public async Task<Dictionary<TKey, double>> GetTotalMarketValueGroupedByAsync<TKey>(
+        Expression<Func<AccountSummary, TKey>> keySelector,
+        DateOnly asOf) where TKey : notnull
+        => await _dbContext.AccountSummaries
+            .Where(a => a.Date == asOf)
+            .GroupBy(keySelector)
+            .Select(g => new { g.Key, Total = g.Sum(a => a.MarketValue) })
+            .ToDictionaryAsync(x => x.Key, x => x.Total);
+
+    //not in repo
     public async Task<Dictionary<TKey, MarketValueGroup>> GetTotalMarketValueGroupedByWithNamesAsync<TKey>(
         Expression<Func<AccountSummary, TKey>> keySelector,
         DateOnly asOf)
@@ -116,16 +127,7 @@ public class AccountSummaryRepository : IAccountSummaryRepository
                     AccountNames = g.Select(a => a.Name).Distinct().ToList()
                 });
     }
-
-    public async Task<Dictionary<TKey, double>> GetTotalMarketValueGroupedByAsync<TKey>(
-        Expression<Func<AccountSummary, TKey>> keySelector,
-        DateOnly asOf) where TKey : notnull
-        => await _dbContext.AccountSummaries
-            .Where(a => a.Date == asOf)
-            .GroupBy(keySelector)
-            .Select(g => new { g.Key, Total = g.Sum(a => a.MarketValue) })
-            .ToDictionaryAsync(x => x.Key, x => x.Total);
-
+    //not in repo
     public async Task<Dictionary<GroupKey<T1, T2>, double>> GetTotalMarketValueGroupedBy2Async<T1, T2>(
         Expression<Func<AccountSummary, T1>> key1,
         Expression<Func<AccountSummary, T2>> key2,

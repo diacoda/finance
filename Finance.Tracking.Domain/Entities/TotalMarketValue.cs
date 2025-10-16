@@ -1,3 +1,5 @@
+namespace Finance.Tracking.Domain.Entities;
+
 using System.Text.Json.Serialization;
 
 public class TotalMarketValue

@@ -1,5 +1,5 @@
 using System.ComponentModel.DataAnnotations.Schema;
-namespace Finance.Tracking.Models;
+namespace Finance.Tracking.Domain.Entities;
 
 public class Account
 {

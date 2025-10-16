@@ -1,4 +1,4 @@
-
+namespace Finance.Tracking.Domain;
 
 public static class AccountTypeExtensions
 {

@@ -145,13 +145,6 @@ public class PortfolioService : IPortfolioService
         }
     }
 
-    /*
-    var totalsByOwnerAndFilter = await accountService.GetMarketValueByOwnerAndAccountFilter();
-
-    foreach (var kvp in totalsByOwnerAndFilter)
-    {
-        Console.WriteLine($"{kvp.Key.Owner} / {kvp.Key.AccountFilter}: {kvp.Value:C2}");
-    }*/
     public async Task<Dictionary<OwnerAccountFilterKey, double>> GetMarketValueByOwnerAndAccountFilterAsync(DateOnly? asOf = null)
     {
         // Call the existing generic method using OwnerAccountFilterKey as TKey

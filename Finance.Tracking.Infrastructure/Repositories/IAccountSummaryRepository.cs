@@ -1,8 +1,6 @@
+namespace Finance.Tracking.Infrastructure.Repositories;
+
 using System.Linq.Expressions;
-using Finance.Tracking.Models;
-
-namespace Finance.Tracking.Repository;
-
 public interface IAccountSummaryRepository
 {
     public Task<List<DateOnly>> GetLast30AvailableDatesAsync();

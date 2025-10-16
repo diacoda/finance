@@ -1,6 +1,4 @@
 using Microsoft.Extensions.Options;
-using Finance.Tracking.Models;
-using Finance.Tracking.Repository;
 using System.Linq.Expressions;
 
 namespace Finance.Tracking.Services;

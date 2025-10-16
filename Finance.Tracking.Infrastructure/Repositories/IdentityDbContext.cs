@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-namespace Finance.Tracking.Data;
+namespace Finance.Tracking.Infrastructure.Repositories;
 
 public class IdentityDbContext : IdentityDbContext<IdentityUser>
 {
